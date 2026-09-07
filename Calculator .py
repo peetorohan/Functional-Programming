@@ -1,6 +1,7 @@
 """
-Calculator
-โปรแกรมเครื่องคิดเลข แบ่งการทำงานออกเป็นฟังก์ชันย่อย
+Calculator (v2)
+โปรแกรมเครื่องคิดเลข แบ่งการทำงานเป็นฟังก์ชันย่อย
+และเพิ่มการจัดการข้อผิดพลาด (Exception Handling)
 """
 
 
@@ -20,19 +21,25 @@ def multiply(a, b):
 
 
 def divide(a, b):
-    """หาร (ตรวจสอบการหารด้วยศูนย์)"""
+    """หาร (จะยิง ZeroDivisionError ถ้า b เป็น 0)"""
     if b == 0:
         raise ZeroDivisionError("ไม่สามารถหารด้วยศูนย์ได้")
     return a / b
 
 
 def get_number(prompt):
-    """รับค่าตัวเลข (float) จากผู้ใช้ พร้อมตรวจสอบความถูกต้อง"""
+    """
+    รับค่าตัวเลข (float) จากผู้ใช้
+    ใช้ try-except จัดการกรณีป้อนข้อมูลที่ไม่ใช่ตัวเลข
+    """
     while True:
         try:
             return float(input(prompt))
         except ValueError:
-            print("กรุณาป้อนตัวเลขเท่านั้น")
+            print("ข้อผิดพลาด: กรุณาป้อนตัวเลขเท่านั้น (เช่น 3 หรือ 3.5)")
+        except KeyboardInterrupt:
+            print("\nยกเลิกการป้อนข้อมูล")
+            raise
 
 
 def show_menu():
@@ -46,54 +53,70 @@ def show_menu():
 
 
 def get_menu_choice():
-    """รับตัวเลือกเมนูจากผู้ใช้ และตรวจสอบว่าอยู่ในช่วง 1-5"""
+    """รับตัวเลือกเมนูจากผู้ใช้ พร้อมตรวจสอบความถูกต้อง"""
     while True:
-        choice = input("เลือกเมนู (1-5): ")
-        if choice in ("1", "2", "3", "4", "5"):
+        try:
+            choice = input("เลือกเมนู (1-5): ").strip()
+            if choice not in ("1", "2", "3", "4", "5"):
+                raise ValueError("ตัวเลือกต้องอยู่ระหว่าง 1-5 เท่านั้น")
             return choice
-        print("กรุณาเลือกตัวเลข 1-5 เท่านั้น")
+        except ValueError as e:
+            print(f"ข้อผิดพลาด: {e}")
 
 
 def calculate(choice, num1, num2):
     """
     เรียกฟังก์ชันคำนวณตามตัวเลือกที่ผู้ใช้เลือก
-    คืนค่าผลลัพธ์ หรือ None ถ้ามีข้อผิดพลาด
+    ดักจับข้อผิดพลาดที่อาจเกิดขึ้น (เช่น หารด้วยศูนย์)
+    คืนค่า (result, error_message)
     """
     try:
         if choice == "1":
-            return add(num1, num2)
+            return add(num1, num2), None
         elif choice == "2":
-            return subtract(num1, num2)
+            return subtract(num1, num2), None
         elif choice == "3":
-            return multiply(num1, num2)
+            return multiply(num1, num2), None
         elif choice == "4":
-            return divide(num1, num2)
+            return divide(num1, num2), None
     except ZeroDivisionError as e:
-        print(f"เกิดข้อผิดพลาด: {e}")
-        return None
+        return None, str(e)
+    except OverflowError:
+        return None, "ตัวเลขมีค่ามากเกินไปที่จะคำนวณได้"
+    except Exception as e:
+        # ดักจับข้อผิดพลาดอื่น ๆ ที่ไม่คาดคิด เพื่อไม่ให้โปรแกรมหยุดทำงาน
+        return None, f"เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}"
 
 
-def show_result(result):
-    """แสดงผลลัพธ์การคำนวณ"""
-    if result is not None:
+def show_result(result, error_message):
+    """แสดงผลลัพธ์ หรือข้อความข้อผิดพลาดถ้ามี"""
+    if error_message:
+        print(f"ข้อผิดพลาด: {error_message}")
+    else:
         print(f"ผลลัพธ์ = {result}")
 
 
 def main():
     """ฟังก์ชันหลักของโปรแกรม"""
-    while True:
-        show_menu()
-        choice = get_menu_choice()
+    try:
+        while True:
+            show_menu()
+            choice = get_menu_choice()
 
-        if choice == "5":
-            print("ขอบคุณที่ใช้บริการครับ")
-            break
+            if choice == "5":
+                print("ขอบคุณที่ใช้บริการครับ")
+                break
 
-        num1 = get_number("ป้อนตัวเลขที่ 1: ")
-        num2 = get_number("ป้อนตัวเลขที่ 2: ")
+            num1 = get_number("ป้อนตัวเลขที่ 1: ")
+            num2 = get_number("ป้อนตัวเลขที่ 2: ")
 
-        result = calculate(choice, num1, num2)
-        show_result(result)
+            result, error_message = calculate(choice, num1, num2)
+            show_result(result, error_message)
+
+    except KeyboardInterrupt:
+        print("\nออกจากโปรแกรมเรียบร้อยแล้ว")
+    finally:
+        print("จบการทำงานของโปรแกรม")
 
 
 if __name__ == "__main__":
