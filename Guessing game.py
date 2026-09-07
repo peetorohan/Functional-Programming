@@ -1,6 +1,7 @@
 """
-Guessing Game
-โปรแกรมทายตัวเลข แบ่งการทำงานออกเป็นฟังก์ชันย่อย
+Guessing Game (v2)
+โปรแกรมทายตัวเลข แบ่งการทำงานเป็นฟังก์ชันย่อย
+และเพิ่มการจัดการข้อผิดพลาด (Exception Handling)
 """
 
 import random
@@ -8,16 +9,29 @@ import random
 
 def generate_secret_number(low=1, high=100):
     """สุ่มตัวเลขลับที่ผู้เล่นต้องทาย"""
-    return random.randint(low, high)
+    try:
+        return random.randint(low, high)
+    except ValueError:
+        # กรณีค่า low, high ผิดช่วง (low > high)
+        print("ช่วงตัวเลขไม่ถูกต้อง จะใช้ค่าเริ่มต้น 1-100 แทน")
+        return random.randint(1, 100)
 
 
 def get_user_guess():
-    """รับค่าตัวเลขที่ผู้เล่นทายจากคีย์บอร์ด พร้อมตรวจสอบว่าเป็นตัวเลข"""
+    """
+    รับค่าตัวเลขที่ผู้เล่นทายจากคีย์บอร์ด
+    ใช้ try-except จัดการกรณีป้อนข้อมูลที่ไม่ใช่ตัวเลข
+    """
     while True:
-        guess_input = input("ทายตัวเลข (1-100): ")
-        if guess_input.isdigit():
-            return int(guess_input)
-        print("กรุณาป้อนตัวเลขเท่านั้น")
+        try:
+            guess = int(input("ทายตัวเลข (1-100): "))
+            return guess
+        except ValueError:
+            print("ข้อผิดพลาด: กรุณาป้อนตัวเลขจำนวนเต็มเท่านั้น")
+        except KeyboardInterrupt:
+            # ผู้ใช้กด Ctrl+C ระหว่างป้อนข้อมูล
+            print("\nยกเลิกการป้อนข้อมูล")
+            raise
 
 
 def check_guess(guess, secret_number):
@@ -49,31 +63,50 @@ def play_game(low=1, high=100):
     print(f"ผมกำลังคิดตัวเลขระหว่าง {low}-{high} อยู่ในใจ ลองทายดูสิ!")
 
     while True:
-        guess = get_user_guess()
-        attempts += 1
-        result = check_guess(guess, secret_number)
+        try:
+            guess = get_user_guess()
+            attempts += 1
+            result = check_guess(guess, secret_number)
 
-        if result == "correct":
-            print(f"ถูกต้อง! คุณทายถูกภายใน {attempts} ครั้ง 🎉")
+            if result == "correct":
+                print(f"ถูกต้อง! คุณทายถูกภายใน {attempts} ครั้ง 🎉")
+                return attempts
+            else:
+                show_hint(result)
+
+        except KeyboardInterrupt:
+            print("\nยกเลิกเกมรอบนี้")
             return attempts
-        else:
-            show_hint(result)
+        except Exception as e:
+            # ดักจับข้อผิดพลาดที่ไม่คาดคิดอื่น ๆ เพื่อไม่ให้โปรแกรมพัง
+            print(f"เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}")
 
 
 def ask_play_again():
-    """ถามผู้เล่นว่าต้องการเล่นอีกครั้งหรือไม่"""
-    answer = input("ต้องการเล่นอีกครั้งหรือไม่ (y/n): ")
-    return answer.strip().lower() == "y"
+    """ถามผู้เล่นว่าต้องการเล่นอีกครั้งหรือไม่ พร้อมตรวจสอบค่าที่ป้อน"""
+    while True:
+        try:
+            answer = input("ต้องการเล่นอีกครั้งหรือไม่ (y/n): ").strip().lower()
+            if answer in ("y", "n"):
+                return answer == "y"
+            raise ValueError("ต้องป้อน y หรือ n เท่านั้น")
+        except ValueError as e:
+            print(f"ข้อผิดพลาด: {e}")
 
 
 def main():
     """ฟังก์ชันหลักของโปรแกรม"""
     print("=== เกมทายตัวเลข ===")
-    while True:
-        play_game()
-        if not ask_play_again():
-            print("ขอบคุณที่เล่นเกมนี้ครับ")
-            break
+    try:
+        while True:
+            play_game()
+            if not ask_play_again():
+                print("ขอบคุณที่เล่นเกมนี้ครับ")
+                break
+    except KeyboardInterrupt:
+        print("\nออกจากโปรแกรมเรียบร้อยแล้ว")
+    finally:
+        print("จบการทำงานของโปรแกรม")
 
 
 if __name__ == "__main__":
